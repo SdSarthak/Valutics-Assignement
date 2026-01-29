@@ -1,16 +1,21 @@
 
 import json
 import os
+import datetime
+from datetime import timedelta
+
+
 
 BOOKS_FILE = 'books.txt'
 
 class Book:
-	def __init__(self, title, author, year, isbn, borrowed=False):
+	def __init__(self, title, author, year, isbn, borrowed_date, borrowed=False):
 		self.title = title
 		self.author = author
 		self.year = year
 		self.isbn = isbn
 		self.borrowed = borrowed
+		self.borrowed_date = borrowed_date
 
 	def to_dict(self):
 		return {
@@ -18,6 +23,7 @@ class Book:
 			'author': self.author,
 			'year': self.year,
 			'isbn': self.isbn,
+			'borrowed_date': self.borrowed_date,
 			'borrowed': self.borrowed
 		}
 
@@ -28,8 +34,13 @@ class Book:
 			data['author'],
 			data['year'],
 			data['isbn'],
+			data['borrowed_date'],
 			data.get('borrowed', False)
 		)
+# 1. add the borrow date for 14 days
+# 2. if borrowing show borrow date
+# 3. if return ubder 14 days, reset the borrowed datetime
+# 4. if over 14 days, show an due tag
 
 class LibraryManager:
 	def __init__(self):
@@ -55,7 +66,7 @@ class LibraryManager:
 		if any(b.isbn == isbn for b in self.books):
 			print('A book with this ISBN already exists.')
 			return
-		self.books.append(Book(title, author, year, isbn))
+		self.books.append(Book(title, author, year, isbn, borrowed_date=None))
 		self.save_books()
 		print('Book added successfully.')
 
@@ -66,7 +77,17 @@ class LibraryManager:
 		print('\nLibrary Collection:')
 		for idx, b in enumerate(self.books, 1):
 			status = 'Borrowed' if b.borrowed else 'Available'
-			print(f"{idx}. {b.title} | {b.author} | {b.year} | ISBN: {b.isbn} | {status}")
+			# Check overdue if borrowed
+			overdue = ''
+			if b.borrowed and b.borrowed_date:
+				try:
+					borrowed_date = datetime.datetime.strptime(b.borrowed_date, "%Y-%m-%d")
+					due_date = borrowed_date + timedelta(days=14)
+					if datetime.datetime.now() > due_date:
+						overdue = ' [OVERDUE]'
+				except Exception:
+					pass
+			print(f"{idx}. {b.title} | {b.author} | {b.year} | ISBN: {b.isbn} | {status}{overdue} | {b.borrowed_date}")
 
 	def search_books(self, keyword, field):
 		results = []
@@ -89,7 +110,11 @@ class LibraryManager:
 				if b.borrowed:
 					print('This book is already borrowed.')
 				else:
+					now = datetime.datetime.now()
 					b.borrowed = True
+					b.borrowed_date = now.strftime("%Y-%m-%d")
+					due_date = now + timedelta(days=14)
+					print(f'The due date is {due_date.strftime("%Y-%m-%d")}')
 					self.save_books()
 					print('Book borrowed successfully.')
 				return
@@ -101,7 +126,26 @@ class LibraryManager:
 				if not b.borrowed:
 					print('This book is not currently borrowed.')
 				else:
+					if b.borrowed_date:
+						try:
+							borrowed_date = datetime.datetime.strptime(b.borrowed_date, "%Y-%m-%d")
+						except Exception:
+							print('Invalid borrowed date format.')
+							borrowed_date = None
+					else:
+						borrowed_date = None
+					now = datetime.datetime.now()
+					if borrowed_date:
+						due_date = borrowed_date + timedelta(days=14)
+						if now > due_date:
+							overdue_days = (now - due_date).days
+							print(f'The book is overdue by {overdue_days} day(s).')
+						else:
+							print('Book returned on time.')
+					else:
+						print('No borrowed date found, cannot check overdue.')
 					b.borrowed = False
+					b.borrowed_date = None
 					self.save_books()
 					print('Book returned successfully.')
 				return
