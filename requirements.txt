@@ -1,0 +1,5 @@
+# The Library Management System runs on the Python standard library alone.
+# There are no runtime dependencies; Python 3.8 or newer is all you need.
+#
+# For the test suite, install the development requirements instead:
+#   pip install -r requirements-dev.txt

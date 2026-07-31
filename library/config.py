@@ -25,10 +25,39 @@ ENV_LOAN_DAYS = 'LIBRARY_LOAN_DAYS'
 #: Catalogue file name used when the environment does not say otherwise.
 DEFAULT_DATA_FILE_NAME = 'books.txt'
 
+#: Optional file of ``KEY=VALUE`` settings loaded at start-up.
+DOTENV_FILE_NAME = '.env'
+
 
 def project_root():
 	"""Return the directory that contains the ``library`` package."""
 	return Path(__file__).resolve().parent.parent
+
+
+def load_dotenv(path=None, env=None):
+	"""Copy ``KEY=VALUE`` lines from a ``.env`` file into the environment.
+
+	Values already present in the environment win, so an explicit export on
+	the command line always beats the file. Blank lines and ``#`` comments are
+	ignored, and a missing file is not an error. Returns the keys that were
+	set, which keeps the behaviour easy to assert in tests.
+	"""
+	env = os.environ if env is None else env
+	path = project_root() / DOTENV_FILE_NAME if path is None else Path(path)
+	if not path.is_file():
+		return []
+	applied = []
+	for line in path.read_text(encoding='utf-8').splitlines():
+		line = line.strip()
+		if not line or line.startswith('#') or '=' not in line:
+			continue
+		key, _, value = line.partition('=')
+		key = key.strip()
+		value = value.strip().strip('"').strip("'")
+		if key and key not in env:
+			env[key] = value
+			applied.append(key)
+	return applied
 
 
 def data_file_path(env=None):

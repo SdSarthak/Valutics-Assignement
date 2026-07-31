@@ -98,3 +98,35 @@ class TestConfig:
 	def test_bad_loan_days_are_rejected(self, value):
 		with pytest.raises(ValidationError):
 			config.loan_days(env={config.ENV_LOAN_DAYS: value})
+
+
+class TestDotenv:
+	def write(self, tmp_path, text):
+		path = tmp_path / '.env'
+		path.write_text(text, encoding='utf-8')
+		return path
+
+	def test_missing_file_is_not_an_error(self, tmp_path):
+		assert config.load_dotenv(path=tmp_path / '.env', env={}) == []
+
+	def test_values_are_loaded(self, tmp_path):
+		path = self.write(tmp_path, 'LIBRARY_LOAN_DAYS=21\nLIBRARY_DATA_FILE="/tmp/books.txt"\n')
+		env = {}
+		assert sorted(config.load_dotenv(path=path, env=env)) == [
+			'LIBRARY_DATA_FILE',
+			'LIBRARY_LOAN_DAYS',
+		]
+		assert env['LIBRARY_LOAN_DAYS'] == '21'
+		assert env['LIBRARY_DATA_FILE'] == '/tmp/books.txt'
+
+	def test_comments_and_blank_lines_are_skipped(self, tmp_path):
+		path = self.write(tmp_path, '# a comment\n\nnot-a-pair\nLIBRARY_LOAN_DAYS=7\n')
+		env = {}
+		assert config.load_dotenv(path=path, env=env) == ['LIBRARY_LOAN_DAYS']
+		assert env == {'LIBRARY_LOAN_DAYS': '7'}
+
+	def test_existing_environment_wins(self, tmp_path):
+		path = self.write(tmp_path, 'LIBRARY_LOAN_DAYS=21\n')
+		env = {'LIBRARY_LOAN_DAYS': '3'}
+		assert config.load_dotenv(path=path, env=env) == []
+		assert env['LIBRARY_LOAN_DAYS'] == '3'

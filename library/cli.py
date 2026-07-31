@@ -247,6 +247,7 @@ def main(argv=None):
 			f'\nSearchable fields: {", ".join(SEARCH_FIELDS)}'
 		)
 		return 0
+	config.load_dotenv()
 	try:
 		manager = build_manager()
 	except (ValidationError, StorageError) as exc:
