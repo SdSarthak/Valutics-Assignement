@@ -1,4 +1,5 @@
-﻿.env
+# Secrets and credentials
+.env
 *.env
 .env.local
 .env.*.local
@@ -7,10 +8,39 @@ apikeys.txt
 *.pem
 secrets.json
 config.json
+credentials.json
+serviceAccount*.json
+
+# Data / local library catalogue
+books.txt
+data/
+*.csv
+*.parquet
+*.db
+*.sqlite
+*.sqlite3
+*.xlsx
+
+# Python
 __pycache__/
 *.pyc
-node_modules/
+*.pyo
+.pytest_cache/
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+.ipynb_checkpoints/
+
+# Environments
 venv/
 env/
+.venv/
+node_modules/
+
+# Editors / OS
 .vscode/
 .idea/
+.DS_Store
+Thumbs.db
